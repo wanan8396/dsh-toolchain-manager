@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Toolchain",
-    "description": "Adds a Toolchain page to Settings between Models and Plugins. Installed npm/pip dependencies are listed with a Delete button per row above a one-tap install grid; all 13 dependency-root folders show their sizes, the four regenerable ones can be emptied. Toolchains are laid out name + version, and any installed through an npm global prefix or inside the dependency root can be deleted here, while OS-provided ones are marked System to protect the running Harness."
+    "description": "Adds a Toolchain page to Settings between Models and Plugins. Installed npm/pip dependencies are listed with a Delete button per row above a one-tap install grid, and all 13 dependency-root folders show their sizes. Toolchains are laid out name + version: a missing one installs in one tap through apt or npm (make, gcc, git, cargo, rustc, golang-go, default-jdk-headless, python3-pip, pnpm), owned ones can be deleted, and OS-provided ones are marked System to protect the running Harness."
   }
 }

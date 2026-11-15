@@ -27,10 +27,14 @@ Two lists and one grid:
   (`cache`, `downloads`, `build`, `tmp`) have an **清空 / Empty** button that empties and recreates
   the directory; the others are marked **受保护 / Protected** because they hold installed plugins,
   package prefixes or backups.
-- **工具链 / Toolchains** — an aligned list of name + version (installed first, missing dimmed).
-  Every toolchain installed through an npm global prefix or inside the dependency root gets a
-  two-tap **删除 / Delete**; OS-provided binaries are marked **系统自带 / System** instead, because
-  removing them would break the running Harness.
+- **工具链 / Toolchains** — an aligned name + version list (installed first, missing dimmed).
+  - **安装 / Install** on a missing row runs `apt-get install -y --no-install-recommends` inside the
+    DSH root (or `npm install -g` for pnpm): `make`, `gcc`, `git`, `cargo`, `rustc`, `golang-go`,
+    `default-jdk-headless`, `python3`, `python3-pip`, `pnpm`.
+  - **删除 / Delete** (two taps) uninstalls a toolchain DSH owns — one installed through an npm
+    global prefix or living inside the dependency root.
+  - OS-provided binaries are marked **系统自带 / System**; deleting them would break the running
+    Harness, and `node`/`npm` themselves are never offered for install or removal.
 - **最近一次操作** — the exact command, exit code, duration and truncated output.
 
 ## Install
@@ -57,8 +61,8 @@ The plugin needs no build step, no dependencies, and no configuration.
 
 `npm-install`, `npm-uninstall`, `npm-cache-clean`, `pip-install`, `pip-uninstall`,
 `pip-cache-purge`, `venv-create`, `venv-remove`, `go-clean`, `ccache-clear`, `tmp-clean`,
-`dir-clean` (only `cache`, `downloads`, `build`, `tmp` — emptied and recreated), `tool-remove`
-(the npm-global or dependency-root toolchain identified by `id`).
+`dir-clean` (only `cache`, `downloads`, `build`, `tmp` — emptied and recreated), `tool-install`
+(apt or npm, by tool id), `tool-remove` (the npm-global or dependency-root toolchain by `id`).
 
 Safety properties:
 

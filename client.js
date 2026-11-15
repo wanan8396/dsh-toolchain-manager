@@ -75,6 +75,8 @@ window.__ModuleLoader__.load({
       'tools.removing': '删除中…',
       'tools.confirm': '确认删除？',
       'tools.protected': '系统自带',
+      'tools.install': '安装',
+      'tools.installing': '安装中…',
       'log.title': '最近一次操作',
       'log.empty': '还没有执行过操作',
       'notice.done': '完成：{command}',
@@ -131,6 +133,8 @@ window.__ModuleLoader__.load({
       'tools.removing': 'Deleting…',
       'tools.confirm': 'Delete it?',
       'tools.protected': 'System',
+      'tools.install': 'Install',
+      'tools.installing': 'Installing…',
       'log.title': 'Last action',
       'log.empty': 'No action yet',
       'notice.done': 'Done: {command}',
@@ -560,7 +564,18 @@ window.__ModuleLoader__.load({
             const armed = current.confirm === busyKey
             let action = null
             if (tool.present !== true) {
-              action = null
+              action = tool.install === null || tool.install === undefined
+                ? null
+                : h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dtm-btn dtm-small dtm-primary',
+                    disabled: current.busy === busyKey,
+                    onClick: () => void act(t, 'tool-install', { id: tool.id }, busyKey, true),
+                  },
+                  current.busy === busyKey ? t('tools.installing') : t('tools.install'),
+                )
             } else if (tool.removable === true) {
               action = h(
                 'button',

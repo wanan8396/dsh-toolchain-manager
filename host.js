@@ -86,6 +86,22 @@ const ENV_KEYS = [
   'CCACHE_DIR',
 ]
 
+/** How each toolchain can be installed from the page; null = managed by DSH itself. */
+const INSTALLS = {
+  node: null,
+  npm: null,
+  pnpm: { method: 'npm', package: 'pnpm' },
+  python3: { method: 'apt', package: 'python3' },
+  pip: { method: 'apt', package: 'python3-pip' },
+  git: { method: 'apt', package: 'git' },
+  gcc: { method: 'apt', package: 'gcc' },
+  make: { method: 'apt', package: 'make' },
+  cargo: { method: 'apt', package: 'cargo' },
+  rustc: { method: 'apt', package: 'rustc' },
+  go: { method: 'apt', package: 'golang-go' },
+  java: { method: 'apt', package: 'default-jdk-headless' },
+}
+
 const TOOLS = [
   { id: 'node', label: 'Node.js', command: 'node', args: ['--version'] },
   { id: 'npm', label: 'npm', command: 'npm', args: ['--version'] },
@@ -122,7 +138,7 @@ function run(command, args, options = {}) {
       args,
       {
         cwd: options.cwd || cwd,
-        env: process.env,
+        env: options.env === undefined ? process.env : { ...process.env, ...options.env },
         timeout: options.timeout || COMMAND_TIMEOUT_MS,
         maxBuffer: 8 * 1024 * 1024,
         windowsHide: true,
@@ -194,6 +210,7 @@ async function probeTools() {
           path: '',
           owner: 'system',
           removable: false,
+          install: INSTALLS[tool.id] === undefined ? null : INSTALLS[tool.id],
           package: '',
           prefix: '',
         }
@@ -210,6 +227,7 @@ async function probeTools() {
         path: where,
         owner: owned !== null ? 'npm-global' : insideRoot ? 'dependency' : 'system',
         removable: owned !== null || insideRoot,
+        install: INSTALLS[tool.id] === undefined ? null : INSTALLS[tool.id],
         package: owned === null ? '' : owned.package,
         prefix: owned === null ? '' : owned.prefix,
       }
@@ -364,6 +382,29 @@ async function listPip(venv) {
   return { rows, venv: venv || '', scope: target === '' ? 'user' : 'venv', raw: result.ok ? '' : result.stderr }
 }
 
+/** Install one missing toolchain through apt or the npm global prefix. */
+async function installTool(input) {
+  const id = String(input.id || '')
+  const tool = TOOLS.find((item) => item.id === id)
+  if (tool === undefined) throw new HttpError(400, `未知工具链：${id}`, 'E_TOOL')
+  if (INSTALLS[id] === undefined || INSTALLS[id] === null) {
+    throw new HttpError(403, `${tool.label} 由 DSH 自带，不能从页面安装`, 'E_MANAGED')
+  }
+  if ((await whichCommand(tool.command)) !== '') {
+    throw new HttpError(409, `${tool.label} 已经安装`, 'E_EXISTS')
+  }
+  const spec = INSTALLS[id]
+  if (spec.method === 'npm') {
+    const result = await run('npm', ['install', '-g', spec.package], { timeout: 600_000 })
+    return { ...result, action: 'tool-install' }
+  }
+  const result = await run('apt-get', ['install', '-y', '--no-install-recommends', spec.package], {
+    timeout: 600_000,
+    env: { DEBIAN_FRONTEND: 'noninteractive' },
+  })
+  return { ...result, action: 'tool-install' }
+}
+
 /** Remove one toolchain that DSH itself owns; system binaries stay protected. */
 async function removeTool(input) {
   const id = String(input.id || '')
@@ -464,6 +505,7 @@ async function runAction(input) {
   const action = String(input.action || '')
   if (action === 'dir-clean') return cleanDirectory(input)
   if (action === 'tool-remove') return removeTool(input)
+  if (action === 'tool-install') return installTool(input)
   const factory = ACTIONS[action]
   if (factory === undefined) throw new HttpError(400, `未知操作：${action}`, 'E_ACTION')
   const [command, args] = factory(input)
