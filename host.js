@@ -255,9 +255,11 @@ async function listVenvs() {
   return rows
 }
 
-/** `npm ls -g --depth=0 --json` → [{name, version}] */
-async function listNpm() {
-  const result = await run('npm', ['ls', '-g', '--depth=0', '--json'], { timeout: 60_000 })
+/** `npm ls -g --depth=0 --json --prefix P` → [{name, version, prefix}] */
+async function npmListAt(prefix) {
+  const args = ['ls', '-g', '--depth=0', '--json']
+  if (prefix !== '') args.push('--prefix', prefix)
+  const result = await run('npm', args, { timeout: 60_000 })
   let parsed = null
   try {
     parsed = JSON.parse(result.stdout)
@@ -271,14 +273,35 @@ async function listNpm() {
     name: pkgName,
     version: typeof info === 'object' && info !== null && typeof info.version === 'string' ? info.version : '',
     description: typeof info === 'object' && info !== null && typeof info.description === 'string' ? info.description : '',
-    path: typeof info === 'object' && info !== null && typeof info.resolved === 'string' ? info.resolved : '',
+    prefix,
   }))
-  rows.sort((left, right) => left.name.localeCompare(right.name))
   const noise = /^npm (?:warn|notice)\b.*$/gm
   const cleaned = String(result.stderr || result.stdout || '').replace(noise, '').trim()
-  // An untouched global prefix has no lib/ yet; `npm ls -g` reports that as ENOENT.
   const emptyPrefix = rows.length === 0 && cleaned.includes('ENOENT') && cleaned.includes('/lib')
-  return { rows, prefix: process.env.NPM_CONFIG_PREFIX || '', raw: emptyPrefix || result.ok ? '' : cleaned.slice(0, 2000) }
+  return { rows, raw: emptyPrefix || result.ok ? '' : cleaned.slice(0, 2000) }
+}
+
+/**
+ * Global packages from both the configured prefix and the OS default one, so a
+ * tool installed before DSH set NPM_CONFIG_PREFIX is still visible.
+ */
+async function listNpm() {
+  const prefixes = []
+  const configured = process.env.NPM_CONFIG_PREFIX || ''
+  if (configured !== '') prefixes.push(configured)
+  if (!prefixes.includes('/usr/local')) prefixes.push('/usr/local')
+  const merged = new Map()
+  const notes = []
+  for (const prefix of prefixes) {
+    const listed = await npmListAt(prefix)
+    if (listed.raw !== '') notes.push(listed.raw)
+    for (const row of listed.rows) {
+      if (!merged.has(row.name)) merged.set(row.name, row)
+    }
+  }
+  const rows = Array.from(merged.values())
+  rows.sort((left, right) => left.name.localeCompare(right.name))
+  return { rows, prefix: configured, prefixes, raw: notes.join('\n').slice(0, 2000) }
 }
 
 /** pip list --format=json for the user install or one venv */

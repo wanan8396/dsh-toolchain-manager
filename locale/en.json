@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Toolchain",
-    "description": "Adds a Toolchain page to Settings between Models and Plugins. Installed npm/pip dependencies are listed one per row with a Delete button; below them a one-tap install grid covers the common packages (pnpm, typescript, tsx, eslint, prettier, vite, requests, numpy, pandas, beautifulsoup4 and more) so nothing has to be typed, and installed ones are marked. It also cleans the cache/downloads/build/tmp folders behind a confirmation, shows the installed toolchains and the last command's output."
+    "description": "Adds a Toolchain page to Settings between Models and Plugins. Installed npm/pip dependencies are listed with a Delete button per row, above a one-tap install grid of common packages so nothing has to be typed. All 13 folders of the dependency root are listed with their sizes: the four regenerable ones can be emptied, the rest are marked protected. Toolchain versions and the last command's output are shown too."
   }
 }

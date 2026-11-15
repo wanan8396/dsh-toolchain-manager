@@ -13,15 +13,20 @@ It answers the three questions that come up while building anything inside DSH:
 
 Two lists and one grid:
 
-- **已安装 / Installed** — every npm global package or pip package (user install or any venv),
-  one per row, each with a **删除 / Delete** button. Nothing to type, nothing to expand.
+- **已安装 / Installed** — every npm global package (both the DSH prefix and the OS default one,
+  so tools installed before DSH are still listed) or pip package (user install or any venv), one
+  per row, each with a **删除 / Delete** button. Nothing to type, nothing to expand.
 - **一键安装 / One-tap install** — a grid of the common dependencies. Tap one and it installs;
   installed entries show **已装** instead of **＋**. The catalogs are
   `pnpm, typescript, tsx, eslint, prettier, nodemon, serve, vite, sass, cross-env` for npm and
   `requests, httpx, numpy, pandas, beautifulsoup4, lxml, pillow, rich, tqdm, python-dotenv`
   for pip. A collapsed **自定义…** field is there only for anything outside the grid.
-- **缓存与目录 / Caches & folders** — `cache`, `downloads`, `build`, `tmp` with their sizes and an
-  **清空 / Empty** button each; destructive ones take a second tap.
+- **依赖目录 / Dependency folders** — all 13 folders of the dependency root
+  (`downloads`, `sources`, `build`, `cache`, `tmp`, `bin`, `npm`, `python`, `venvs`, `cargo`, `go`,
+  `rustup`, `backups`) with their sizes, plus the total. The four regenerable ones
+  (`cache`, `downloads`, `build`, `tmp`) have an **清空 / Empty** button that empties and recreates
+  the directory; the others are marked **受保护 / Protected** because they hold installed plugins,
+  package prefixes or backups.
 - **工具链 / Toolchains** — installed versions as compact chips, missing ones dimmed.
 - **最近一次操作** — the exact command, exit code, duration and truncated output.
 

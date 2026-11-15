@@ -20,11 +20,11 @@ window.__ModuleLoader__.load({
       'requests', 'httpx', 'numpy', 'pandas', 'beautifulsoup4',
       'lxml', 'pillow', 'rich', 'tqdm', 'python-dotenv',
     ]
-    const CLEANABLE = [
-      ['cache', '缓存'],
-      ['downloads', '下载归档'],
-      ['build', '编译输出'],
-      ['tmp', '临时文件'],
+    /** Only these hold regenerable data; everything else stays protected. */
+    const CLEANABLE = ['cache', 'downloads', 'build', 'tmp']
+    const DIR_NAMES = [
+      'downloads', 'sources', 'build', 'cache', 'tmp', 'bin',
+      'npm', 'python', 'venvs', 'cargo', 'go', 'rustup', 'backups',
     ]
 
     const zh = {
@@ -51,7 +51,21 @@ window.__ModuleLoader__.load({
       'presets.custom': '自定义…',
       'presets.customName': '包名',
       'presets.customInstall': '安装',
-      'clean.title': '缓存与目录',
+      'clean.title': '依赖目录',
+      'clean.protected': '受保护',
+      'dir.downloads': '下载归档',
+      'dir.sources': '源码与插件',
+      'dir.build': '编译输出',
+      'dir.cache': '缓存',
+      'dir.tmp': '临时文件',
+      'dir.bin': '独立工具',
+      'dir.npm': 'npm 全局前缀',
+      'dir.python': 'pip 用户安装',
+      'dir.venvs': 'Python venv',
+      'dir.cargo': 'Rust 缓存',
+      'dir.go': 'Go 目录',
+      'dir.rustup': 'Rustup 工具链',
+      'dir.backups': '备份',
       'clean.total': '合计 {size}',
       'clean.action': '清空',
       'clean.confirm': '确认清空？',
@@ -89,7 +103,21 @@ window.__ModuleLoader__.load({
       'presets.custom': 'Custom…',
       'presets.customName': 'Package',
       'presets.customInstall': 'Install',
-      'clean.title': 'Caches & folders',
+      'clean.title': 'Dependency folders',
+      'clean.protected': 'Protected',
+      'dir.downloads': 'Downloads',
+      'dir.sources': 'Sources & plugins',
+      'dir.build': 'Build output',
+      'dir.cache': 'Caches',
+      'dir.tmp': 'Temp files',
+      'dir.bin': 'Standalone tools',
+      'dir.npm': 'npm global prefix',
+      'dir.python': 'pip user install',
+      'dir.venvs': 'Python venvs',
+      'dir.cargo': 'Rust cache',
+      'dir.go': 'Go directory',
+      'dir.rustup': 'Rustup toolchains',
+      'dir.backups': 'Backups',
       'clean.total': '{size} total',
       'clean.action': 'Empty',
       'clean.confirm': 'Empty it?',
@@ -431,44 +459,64 @@ window.__ModuleLoader__.load({
       )
     }
 
-    function CleanCard(props) {
+    function DependencyDirsCard(props) {
       const t = props.t
       const current = useStore()
       const overview = current.overview
       if (overview === null) return null
-      const sizes = new Map(overview.rows.map((row) => [row.name, row.bytes]))
+      const byName = new Map(overview.rows.map((row) => [row.name, row]))
+      const rows = DIR_NAMES
+        .map((name) => {
+          const row = byName.get(name)
+          return row === undefined ? null : row
+        })
+        .filter((row) => row !== null)
+      for (const row of overview.rows) {
+        if (!DIR_NAMES.includes(row.name)) rows.push(row)
+      }
       return h(
         Card,
         { title: t('clean.title'), meta: t('clean.total').replace('{size}', formatBytes(overview.total)) },
         h(
           'div',
           { className: 'dtm-clean' },
-          CLEANABLE.map(([name, label]) => {
-            const busyKey = `clean:${name}`
+          rows.map((row) => {
+            const busyKey = `clean:${row.name}`
             const armed = current.confirm === busyKey
+            const cleanable = CLEANABLE.includes(row.name)
             return h(
               'div',
-              { className: 'dtm-clean-row', key: name },
-              h('span', { className: 'dtm-clean-name' }, name),
-              h('span', { className: 'dtm-clean-role' }, label),
-              h('span', { className: 'dtm-clean-size' }, formatBytes(sizes.get(name) || 0)),
+              { className: 'dtm-clean-row', key: row.name },
+              h('span', { className: 'dtm-clean-name' }, row.name),
               h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'dtm-btn dtm-small' + (armed ? ' dtm-danger' : ''),
-                  disabled: current.busy === busyKey,
-                  onClick: () => {
-                    if (!armed) {
-                      patch({ confirm: busyKey })
-                      return
-                    }
-                    patch({ confirm: '' })
-                    void act(t, 'dir-clean', { name }, busyKey, true)
-                  },
-                },
-                current.busy === busyKey ? t('common.running') : armed ? t('clean.confirm') : t('clean.action'),
+                'span',
+                { className: 'dtm-clean-role' },
+                t('dir.' + row.name) === 'dir.' + row.name ? row.role : t('dir.' + row.name),
               ),
+              h('span', { className: 'dtm-clean-size' }, formatBytes(row.bytes)),
+              cleanable
+                ? h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dtm-btn dtm-small' + (armed ? ' dtm-danger' : ''),
+                    disabled: current.busy === busyKey,
+                    onClick: () => {
+                      if (!armed) {
+                        patch({ confirm: busyKey })
+                        return
+                      }
+                      patch({ confirm: '' })
+                      void act(t, 'dir-clean', { name: row.name }, busyKey, true)
+                    },
+                  },
+                  current.busy === busyKey ? t('common.running') : armed ? t('clean.confirm') : t('clean.action'),
+                )
+                : h(
+                  'span',
+                  { className: 'dtm-protected', title: '内含已安装插件/备份，避免误删' },
+                  t('clean.protected'),
+                ),
             )
           }),
         ),
@@ -534,7 +582,7 @@ window.__ModuleLoader__.load({
       }
       body.push(h(InstalledCard, { key: 'installed', t }))
       body.push(h(PresetsCard, { key: 'presets', t }))
-      body.push(h(CleanCard, { key: 'clean', t }))
+      body.push(h(DependencyDirsCard, { key: 'dirs', t }))
       body.push(h(ToolsCard, { key: 'tools', t }))
       body.push(h(LogCard, { key: 'log', t }))
 
@@ -608,6 +656,7 @@ window.__ModuleLoader__.load({
       '.dtm-preset-on .dtm-preset-state{color:var(--dsw-alias-state-success-primary,#2da44e)}',
       '.dtm-clean{display:flex;flex-direction:column;gap:2px}',
       '.dtm-clean-row{display:flex;align-items:center;gap:8px;padding:5px 2px;min-width:0;font-size:.86em}',
+      '.dtm-protected{flex:none;font-size:.76em;color:var(--dsw-alias-label-tertiary,#6e7781);border:1px dashed var(--dsw-alias-border-l1,rgba(31,35,40,.2));border-radius:999px;padding:1px 8px}',
       '.dtm-clean-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;flex:none}',
       '.dtm-clean-role{color:var(--dsw-alias-label-tertiary,#6e7781);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dtm-clean-size{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,#57606a);flex:none;font-size:.92em}',

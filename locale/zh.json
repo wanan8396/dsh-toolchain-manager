@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "编译链依赖",
-    "description": "在设置里模型与内置插件之间加一页“编译链依赖”。已安装的 npm / pip 依赖逐条列出，每行末尾一个“删除”按钮即可卸载；下方是一键安装区，常用依赖（pnpm、typescript、tsx、eslint、prettier、vite、requests、numpy、pandas、beautifulsoup4 等）点一下就装，不用输入名字，已装的会标出。还有缓存与目录清理（cache/downloads/build/tmp 各一行，二次确认后清空）、工具链版本一览与最近一次命令输出。"
+    "description": "在设置里模型与内置插件之间加一页“编译链依赖”。已装的 npm / pip 依赖逐条列出，每行末尾一个“删除”；下面是常用依赖的一键安装按钮墙，点一下即装不用输入名字，已装的会标出。依赖根目录 13 个子目录（downloads、sources、build、cache、tmp、bin、npm、python、venvs、cargo、go、rustup、backups）都会显示占用，可再生的四个带“清空”，其余标记受保护；另有工具链版本与最近一次命令输出。"
   }
 }
