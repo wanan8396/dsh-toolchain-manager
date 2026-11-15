@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Toolchain",
+    "description": "Adds a Toolchain page to Settings between Models and Plugins. It shows the dependency root's subdirectory usage (downloads, sources, build, caches, tmp), installed toolchain versions and paths (Node, npm, pnpm, Python, pip, Git, GCC, Make, Cargo, rustc, Go, Java), and the npm global plus pip user/venv packages. Install and uninstall packages, create or remove a venv, clean npm/pip caches, empty build and tmp, and drop temp files older than three days; every command runs with fixed arguments inside the dependency root and its output is shown."
+  }
+}

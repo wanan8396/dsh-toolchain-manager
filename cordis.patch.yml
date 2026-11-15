@@ -1,0 +1,7 @@
+# Patch layer for @local/toolchain-manager.
+# One host row serves the JSON API under /plugins/toolchain-manager/*; the
+# browser half is discovered through `dsh.client` and served at
+# /plugins/@local/toolchain-manager/client.js.
+- insert:
+    - id: toolchain-manager
+      name: '@local/toolchain-manager'

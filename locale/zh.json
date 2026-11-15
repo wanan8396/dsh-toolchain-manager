@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "编译链依赖",
+    "description": "在设置里模型与内置插件之间加一页“编译链依赖”：显示依赖根目录各子目录占用（下载/源码/构建/缓存/临时）、已装工具链版本（Node、npm、pnpm、Python、pip、Git、GCC、Make、Cargo、rustc、Go、Java）与所在路径，以及 npm 全局包和 pip 用户/venv 包。可安装与卸载包、新建或删除 venv、清理 npm/pip 缓存、清空 build 与 tmp、删除 3 天前的临时文件；每条命令都在依赖根目录里用固定参数执行并显示输出。"
+  }
+}

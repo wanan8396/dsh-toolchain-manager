@@ -1,0 +1,50 @@
+{
+  "name": "@local/toolchain-manager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Toolchain and dependency manager for DeepSeek Harness: one Settings section for installed toolchains, the dependency root, npm/pip packages and caches.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "host.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "toolchain",
+    "dependencies"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wanan8396/dsh-toolchain-manager.git"
+  },
+  "homepage": "https://github.com/wanan8396/dsh-toolchain-manager#readme",
+  "bugs": {
+    "url": "https://github.com/wanan8396/dsh-toolchain-manager/issues"
+  }
+}
