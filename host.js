@@ -14,7 +14,7 @@
 
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { readdir, readFile, rm, stat } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -341,19 +341,34 @@ const ACTIONS = {
   'go-clean': () => ['go', ['clean', '-cache']],
   'ccache-clear': () => ['ccache', ['-C']],
   'tmp-clean': () => ['find', [path.join(dependencyRoot(), 'tmp'), '-mindepth', '1', '-maxdepth', '2', '-mtime', '+3', '-delete']],
-  'dir-remove': (input) => {
-    const target = String(input.path || '').trim()
-    const allowed = ['build', 'tmp'].map((name) => path.join(dependencyRoot(), name))
-    const resolved = path.resolve(target)
-    if (!allowed.includes(resolved)) {
-      throw new HttpError(403, '只允许清理 build 与 tmp 目录', 'E_SCOPE')
-    }
-    return ['rm', ['-rf', resolved]]
-  },
+}
+
+const CLEANABLE = ['cache', 'downloads', 'build', 'tmp']
+
+/** Empty one cache/document directory and recreate it, without a shell. */
+async function cleanDirectory(input) {
+  const name = String(input.name || '').trim()
+  if (!CLEANABLE.includes(name)) {
+    throw new HttpError(403, `只允许清空：${CLEANABLE.join('、')}`, 'E_SCOPE')
+  }
+  const target = path.join(dependencyRoot(), name)
+  const started = Date.now()
+  await rm(target, { recursive: true, force: true })
+  await mkdir(target, { recursive: true })
+  return {
+    ok: true,
+    code: 0,
+    stdout: `emptied ${target}`,
+    stderr: '',
+    command: `rm -rf ${target} && mkdir -p ${target}`,
+    durationMs: Date.now() - started,
+    action: 'dir-clean',
+  }
 }
 
 async function runAction(input) {
   const action = String(input.action || '')
+  if (action === 'dir-clean') return cleanDirectory(input)
   const factory = ACTIONS[action]
   if (factory === undefined) throw new HttpError(400, `未知操作：${action}`, 'E_ACTION')
   const [command, args] = factory(input)

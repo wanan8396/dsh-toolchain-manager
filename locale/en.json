@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Toolchain",
-    "description": "Adds a Toolchain page to Settings between Models and Plugins. It shows the dependency root's subdirectory usage (downloads, sources, build, caches, tmp), installed toolchain versions and paths (Node, npm, pnpm, Python, pip, Git, GCC, Make, Cargo, rustc, Go, Java), and the npm global plus pip user/venv packages. Install and uninstall packages, create or remove a venv, clean npm/pip caches, empty build and tmp, and drop temp files older than three days; every command runs with fixed arguments inside the dependency root and its output is shown."
+    "description": "Adds a Toolchain page to Settings between Models and Plugins. Installed npm/pip dependencies are listed one per row with a Delete button; below them a one-tap install grid covers the common packages (pnpm, typescript, tsx, eslint, prettier, vite, requests, numpy, pandas, beautifulsoup4 and more) so nothing has to be typed, and installed ones are marked. It also cleans the cache/downloads/build/tmp folders behind a confirmation, shows the installed toolchains and the last command's output."
   }
 }

@@ -11,104 +11,96 @@ window.__ModuleLoader__.load({
     const STYLE_ID = 'dtm-toolchain-manager-style'
     const SECTION_ID = 'toolchains'
 
+    /** One-tap catalogs: the common things people actually install. */
+    const NPM_PRESETS = [
+      'pnpm', 'typescript', 'tsx', 'eslint', 'prettier',
+      'nodemon', 'serve', 'vite', 'sass', 'cross-env',
+    ]
+    const PIP_PRESETS = [
+      'requests', 'httpx', 'numpy', 'pandas', 'beautifulsoup4',
+      'lxml', 'pillow', 'rich', 'tqdm', 'python-dotenv',
+    ]
+    const CLEANABLE = [
+      ['cache', '缓存'],
+      ['downloads', '下载归档'],
+      ['build', '编译输出'],
+      ['tmp', '临时文件'],
+    ]
+
     const zh = {
       'section.label': '编译链依赖',
       'section.title': '编译链与依赖',
-      'section.subtitle': '依赖根目录、工具链版本、npm / pip 包与缓存',
+      'section.subtitle': '一键安装常用依赖，装完可随时删除',
       'common.refresh': '刷新',
       'common.cancel': '取消',
-      'common.delete': '卸载',
+      'common.remove': '删除',
+      'common.removing': '删除中…',
       'common.install': '安装',
       'common.installing': '安装中…',
-      'common.removing': '卸载中…',
-      'common.running': '执行中…',
-      'common.version': '版本（可空）',
-      'common.name': '包名',
+      'common.running': '清理中…',
       'common.loading': '读取中…',
-      'common.empty': '（空）',
-      'common.count': '{count} 个',
-      'root.title': '依赖根目录',
-      'root.total': '合计 {size}',
-      'root.entries': '{count} 项',
-      'root.cleanBuild': '清空 build',
-      'root.cleanTmp': '清空 tmp',
-      'root.cleanTmpOld': '清理 3 天前临时文件',
-      'root.confirm': '确认清理？再点一次',
+      'common.empty': '还没有装任何依赖',
+      'installed.title': '已安装',
+      'installed.npm': 'npm',
+      'installed.pip': 'pip',
+      'installed.count': '{count} 个',
+      'installed.scopeUser': '用户',
+      'presets.title': '一键安装',
+      'presets.hint': '点一下就开始装，不用输入名字；已装的会标出来。',
+      'presets.done': '已装',
+      'presets.custom': '自定义…',
+      'presets.customName': '包名',
+      'presets.customInstall': '安装',
+      'clean.title': '缓存与目录',
+      'clean.total': '合计 {size}',
+      'clean.action': '清空',
+      'clean.confirm': '确认清空？',
       'tools.title': '工具链',
-      'tools.missing': '未安装',
-      'npm.title': 'npm 全局包',
-      'npm.prefix': '前缀',
-      'npm.installPlaceholder': '例如 typescript',
-      'npm.cache': '清理 npm 缓存',
-      'pip.title': 'Python 包',
-      'pip.scopeUser': '用户安装（--user）',
-      'pip.scopeVenv': 'venv',
-      'pip.cache': '清理 pip 缓存',
-      'pip.venvs': 'venv',
-      'pip.venvName': 'venv 名称',
-      'pip.createVenv': '新建 venv',
-      'pip.createRunning': '创建中…',
-      'pip.removeVenv': '删除 venv',
+      'tools.missing': '未装',
       'log.title': '最近一次操作',
       'log.empty': '还没有执行过操作',
-      'log.stdout': '输出',
-      'log.stderr': '错误输出',
-      'env.title': '环境变量',
-      'notice.done': '已完成：{command}',
-      'notice.failed': '命令退出码 {code}：{command}',
+      'notice.done': '完成：{command}',
+      'notice.failed': '失败（{code}）：{command}',
       'error.prefix': '操作失败：',
       'error.name': '请先填写包名',
-      'error.venv': '请先填写 venv 名称',
     }
 
     const en = {
       'section.label': 'Toolchain',
       'section.title': 'Toolchain & dependencies',
-      'section.subtitle': 'Dependency root, toolchain versions, npm / pip packages and caches',
+      'section.subtitle': 'One-tap installs for common dependencies, delete any of them later',
       'common.refresh': 'Refresh',
       'common.cancel': 'Cancel',
-      'common.delete': 'Uninstall',
+      'common.remove': 'Delete',
+      'common.removing': 'Deleting…',
       'common.install': 'Install',
       'common.installing': 'Installing…',
-      'common.removing': 'Uninstalling…',
-      'common.running': 'Running…',
-      'common.version': 'Version (optional)',
-      'common.name': 'Package',
+      'common.running': 'Cleaning…',
       'common.loading': 'Loading…',
-      'common.empty': '(empty)',
-      'common.count': '{count}',
-      'root.title': 'Dependency root',
-      'root.total': '{size} total',
-      'root.entries': '{count} entries',
-      'root.cleanBuild': 'Empty build',
-      'root.cleanTmp': 'Empty tmp',
-      'root.cleanTmpOld': 'Drop temp files older than 3 days',
-      'root.confirm': 'Tap again to confirm',
+      'common.empty': 'Nothing installed yet',
+      'installed.title': 'Installed',
+      'installed.npm': 'npm',
+      'installed.pip': 'pip',
+      'installed.count': '{count}',
+      'installed.scopeUser': 'User',
+      'presets.title': 'One-tap install',
+      'presets.hint': 'Tap to install — no typing; installed ones are marked.',
+      'presets.done': 'Installed',
+      'presets.custom': 'Custom…',
+      'presets.customName': 'Package',
+      'presets.customInstall': 'Install',
+      'clean.title': 'Caches & folders',
+      'clean.total': '{size} total',
+      'clean.action': 'Empty',
+      'clean.confirm': 'Empty it?',
       'tools.title': 'Toolchains',
-      'tools.missing': 'Not installed',
-      'npm.title': 'npm global packages',
-      'npm.prefix': 'Prefix',
-      'npm.installPlaceholder': 'e.g. typescript',
-      'npm.cache': 'Clean npm cache',
-      'pip.title': 'Python packages',
-      'pip.scopeUser': 'User install (--user)',
-      'pip.scopeVenv': 'venv',
-      'pip.cache': 'Purge pip cache',
-      'pip.venvs': 'venvs',
-      'pip.venvName': 'venv name',
-      'pip.createVenv': 'Create venv',
-      'pip.createRunning': 'Creating…',
-      'pip.removeVenv': 'Remove venv',
+      'tools.missing': 'missing',
       'log.title': 'Last action',
       'log.empty': 'No action yet',
-      'log.stdout': 'Output',
-      'log.stderr': 'Errors',
-      'env.title': 'Environment',
       'notice.done': 'Done: {command}',
-      'notice.failed': 'Exit code {code}: {command}',
+      'notice.failed': 'Failed ({code}): {command}',
       'error.prefix': 'Failed: ',
       'error.name': 'Enter a package name first',
-      'error.venv': 'Enter a venv name first',
     }
 
     const formatBytes = (bytes) => {
@@ -130,17 +122,15 @@ window.__ModuleLoader__.load({
       overview: null,
       npm: null,
       pip: null,
+      kind: 'npm',
       pipScope: '',
       loading: false,
       busy: '',
       error: '',
       notice: '',
       log: null,
-      npmName: '',
-      npmVersion: '',
-      pipName: '',
-      pipVersion: '',
-      venvName: '',
+      customOpen: false,
+      customName: '',
       confirm: '',
     }
 
@@ -189,32 +179,27 @@ window.__ModuleLoader__.load({
 
     const message = (t, error) => t('error.prefix') + (error && error.message ? error.message : String(error))
 
+    async function loadPackages() {
+      const [npm, pip] = await Promise.all([
+        request('/packages?kind=npm'),
+        request('/packages?kind=pip' + (state.pipScope === '' ? '' : `&venv=${encodeURIComponent(state.pipScope)}`)),
+      ])
+      patch({ npm, pip })
+    }
+
     async function loadAll(t) {
       patch({ loading: true, error: '' })
       try {
         const overview = await request('/overview')
         patch({ overview })
-        const npm = await request('/packages?kind=npm')
-        patch({ npm })
-        const pip = await request('/packages?kind=pip' + (state.pipScope === '' ? '' : `&venv=${encodeURIComponent(state.pipScope)}`))
-        patch({ pip, loading: false })
+        await loadPackages()
+        patch({ loading: false })
       } catch (error) {
         patch({ loading: false, error: message(t, error) })
       }
     }
 
-    async function refreshPackages(t) {
-      try {
-        const npm = await request('/packages?kind=npm')
-        patch({ npm })
-        const pip = await request('/packages?kind=pip' + (state.pipScope === '' ? '' : `&venv=${encodeURIComponent(state.pipScope)}`))
-        patch({ pip })
-      } catch (error) {
-        patch({ error: message(t, error) })
-      }
-    }
-
-    async function act(t, action, extra, busyKey) {
+    async function act(t, action, extra, busyKey, refreshOverview) {
       patch({ busy: busyKey, error: '', notice: '' })
       try {
         const result = await request('/run', { action, ...(extra || {}) })
@@ -225,20 +210,15 @@ window.__ModuleLoader__.load({
             ? t('notice.done').replace('{command}', result.command)
             : t('notice.failed').replace('{code}', String(result.code)).replace('{command}', result.command),
         })
-        await refreshPackages(t)
-        if (
-          action === 'venv-create' ||
-          action === 'venv-remove' ||
-          action === 'dir-remove' ||
-          action === 'tmp-clean' ||
-          action === 'go-clean' ||
-          action === 'ccache-clear'
-        ) {
+        await loadPackages()
+        if (refreshOverview === true) {
           const overview = await request('/overview')
           patch({ overview })
         }
+        return result
       } catch (error) {
         patch({ busy: '', error: message(t, error) })
+        return null
       }
     }
 
@@ -261,7 +241,7 @@ window.__ModuleLoader__.load({
       return h(Glyph, { size: (props && props.size) || 16 })
     }
 
-    // ----------------------------------------------------------- primitives
+    // ---------------------------------------------------------------- cards
 
     function Card(props) {
       return h(
@@ -271,65 +251,226 @@ window.__ModuleLoader__.load({
           'div',
           { className: 'dtm-card-head' },
           h('h2', { className: 'dtm-card-title' }, props.title),
-          props.meta === undefined ? null : h('span', { className: 'dtm-meta' }, props.meta),
+          props.meta === undefined || props.meta === '' ? null : h('span', { className: 'dtm-meta' }, props.meta),
+          props.aside === undefined ? null : props.aside,
         ),
         props.children,
       )
     }
 
-    // --------------------------------------------------------------- sections
-
-    function RootCard(props) {
+    function InstalledCard(props) {
       const t = props.t
       const current = useStore()
-      const overview = current.overview
-      if (overview === null) return null
-      const cleaning = (key) => current.busy === key
-      const clean = (key, action, path) => {
-        if (current.confirm !== key) {
-          patch({ confirm: key })
-          return
-        }
-        patch({ confirm: '' })
-        void act(t, action, { path }, key)
-      }
-      const button = (key, label, action, target) =>
+      const list = current.kind === 'npm' ? current.npm : current.pip
+      const rows = list === null ? [] : (list.rows || [])
+      const venvs = current.overview === null ? [] : current.overview.venvs
+      const kindButton = (kind, label) =>
         h(
           'button',
           {
             type: 'button',
-            className: 'dtm-btn' + (current.confirm === key ? ' dtm-danger' : ''),
-            disabled: cleaning(key),
-            onClick: () => clean(key, action, target),
+            className: 'dtm-tab' + (current.kind === kind ? ' dtm-tab-on' : ''),
+            onClick: () => patch({ kind }),
           },
-          cleaning(key) ? t('common.running') : current.confirm === key ? t('root.confirm') : label,
+          label,
         )
       return h(
         Card,
         {
-          title: t('root.title'),
-          meta: t('root.total').replace('{size}', formatBytes(overview.total)),
+          title: t('installed.title'),
+          meta: t('installed.count').replace('{count}', String(rows.length)),
+          aside: h(
+            'div',
+            { className: 'dtm-tabs' },
+            kindButton('npm', t('installed.npm')),
+            kindButton('pip', t('installed.pip')),
+          ),
         },
-        h('div', { className: 'dtm-path' }, overview.root),
+        current.kind === 'pip'
+          ? h(
+            'div',
+            { className: 'dtm-row' },
+            h(
+              'select',
+              {
+                className: 'dtm-select',
+                value: current.pipScope,
+                onChange: (event) => {
+                  patch({ pipScope: event.currentTarget.value })
+                  void loadPackages().catch((error) => patch({ error: message(t, error) }))
+                },
+              },
+              h('option', { value: '' }, t('installed.scopeUser')),
+              venvs.map((venv) => h('option', { key: venv.name, value: venv.name }, `venv: ${venv.name}`)),
+            ),
+          )
+          : null,
         h(
           'div',
-          { className: 'dtm-sizes' },
-          overview.rows.map((row) =>
+          { className: 'dtm-list' },
+          rows.length > 0
+            ? rows.map((row) =>
+              h(
+                'div',
+                { className: 'dtm-item', key: row.name },
+                h(
+                  'div',
+                  { className: 'dtm-item-main' },
+                  h('span', { className: 'dtm-item-name' }, row.name),
+                  h('span', { className: 'dtm-item-version' }, row.version),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dtm-btn dtm-small dtm-danger',
+                    disabled: current.busy === `uninstall:${row.name}`,
+                    onClick: () =>
+                      void act(
+                        t,
+                        current.kind === 'npm' ? 'npm-uninstall' : 'pip-uninstall',
+                        current.kind === 'npm' ? { name: row.name } : { name: row.name, venv: current.pipScope },
+                        `uninstall:${row.name}`,
+                        false,
+                      ),
+                  },
+                  current.busy === `uninstall:${row.name}` ? t('common.removing') : t('common.remove'),
+                ),
+              ),
+            )
+            : h('p', { className: 'dtm-hint' }, current.loading ? t('common.loading') : t('common.empty')),
+        ),
+      )
+    }
+
+    function PresetsCard(props) {
+      const t = props.t
+      const current = useStore()
+      const list = current.kind === 'npm' ? current.npm : current.pip
+      const installed = new Set(list === null ? [] : (list.rows || []).map((row) => row.name.toLowerCase()))
+      const presets = current.kind === 'npm' ? NPM_PRESETS : PIP_PRESETS
+      const install = (name) =>
+        void act(
+          t,
+          current.kind === 'npm' ? 'npm-install' : 'pip-install',
+          current.kind === 'npm' ? { name } : { name, venv: current.pipScope },
+          `install:${name}`,
+          false,
+        )
+      return h(
+        Card,
+        { title: t('presets.title'), meta: current.kind === 'npm' ? 'npm' : 'pip' },
+        h('p', { className: 'dtm-hint' }, t('presets.hint')),
+        h(
+          'div',
+          { className: 'dtm-presets' },
+          presets.map((name) =>
             h(
-              'div',
-              { className: 'dtm-size-row', key: row.name },
-              h('span', { className: 'dtm-size-name' }, row.name),
-              h('span', { className: 'dtm-size-role' }, row.role),
-              h('span', { className: 'dtm-size-value' }, formatBytes(row.bytes)),
+              'button',
+              {
+                key: name,
+                type: 'button',
+                className: 'dtm-preset' + (installed.has(name.toLowerCase()) ? ' dtm-preset-on' : ''),
+                disabled: current.busy === `install:${name}`,
+                onClick: () => install(name),
+              },
+              h('span', { className: 'dtm-preset-name' }, name),
+              h(
+                'span',
+                { className: 'dtm-preset-state' },
+                current.busy === `install:${name}`
+                  ? t('common.installing')
+                  : installed.has(name.toLowerCase())
+                    ? t('presets.done')
+                    : '＋',
+              ),
             ),
           ),
         ),
+        current.customOpen
+          ? h(
+            'div',
+            { className: 'dtm-row' },
+            h('input', {
+              className: 'dtm-input',
+              value: current.customName,
+              placeholder: t('presets.customName'),
+              spellCheck: false,
+              onChange: (event) => patch({ customName: event.currentTarget.value }),
+            }),
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'dtm-btn dtm-primary',
+                disabled: current.busy === 'install:custom',
+                onClick: () => {
+                  const name = state.customName.trim()
+                  if (name === '') {
+                    patch({ error: t('error.prefix') + t('error.name') })
+                    return
+                  }
+                  void act(
+                    t,
+                    current.kind === 'npm' ? 'npm-install' : 'pip-install',
+                    current.kind === 'npm' ? { name } : { name, venv: current.pipScope },
+                    'install:custom',
+                    false,
+                  )
+                },
+              },
+              t('presets.customInstall'),
+            ),
+            h('button', { type: 'button', className: 'dtm-btn', onClick: () => patch({ customOpen: false }) }, t('common.cancel')),
+          )
+          : h(
+            'button',
+            { type: 'button', className: 'dtm-btn dtm-small', onClick: () => patch({ customOpen: true }) },
+            t('presets.custom'),
+          ),
+      )
+    }
+
+    function CleanCard(props) {
+      const t = props.t
+      const current = useStore()
+      const overview = current.overview
+      if (overview === null) return null
+      const sizes = new Map(overview.rows.map((row) => [row.name, row.bytes]))
+      return h(
+        Card,
+        { title: t('clean.title'), meta: t('clean.total').replace('{size}', formatBytes(overview.total)) },
         h(
           'div',
-          { className: 'dtm-row' },
-          button('build', t('root.cleanBuild'), 'dir-remove', overview.root + '/build'),
-          button('tmp', t('root.cleanTmp'), 'dir-remove', overview.root + '/tmp'),
-          button('tmp-old', t('root.cleanTmpOld'), 'tmp-clean', ''),
+          { className: 'dtm-clean' },
+          CLEANABLE.map(([name, label]) => {
+            const busyKey = `clean:${name}`
+            const armed = current.confirm === busyKey
+            return h(
+              'div',
+              { className: 'dtm-clean-row', key: name },
+              h('span', { className: 'dtm-clean-name' }, name),
+              h('span', { className: 'dtm-clean-role' }, label),
+              h('span', { className: 'dtm-clean-size' }, formatBytes(sizes.get(name) || 0)),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'dtm-btn dtm-small' + (armed ? ' dtm-danger' : ''),
+                  disabled: current.busy === busyKey,
+                  onClick: () => {
+                    if (!armed) {
+                      patch({ confirm: busyKey })
+                      return
+                    }
+                    patch({ confirm: '' })
+                    void act(t, 'dir-clean', { name }, busyKey, true)
+                  },
+                },
+                current.busy === busyKey ? t('common.running') : armed ? t('clean.confirm') : t('clean.action'),
+              ),
+            )
+          }),
         ),
       )
     }
@@ -344,309 +485,28 @@ window.__ModuleLoader__.load({
         { title: t('tools.title'), meta: overview.platform },
         h(
           'div',
-          { className: 'dtm-tools' },
+          { className: 'dtm-chips' },
           overview.tools.map((tool) =>
             h(
-              'div',
-              { className: 'dtm-tool' + (tool.present ? '' : ' dtm-off'), key: tool.id },
-              h('span', { className: 'dtm-tool-name' }, tool.label),
-              h('span', { className: 'dtm-tool-version' }, tool.present ? tool.version || t('common.empty') : t('tools.missing')),
-              tool.path === '' ? null : h('span', { className: 'dtm-tool-path' }, tool.path),
-            ),
-          ),
-        ),
-      )
-    }
-
-    function NpmCard(props) {
-      const t = props.t
-      const current = useStore()
-      const npm = current.npm
-      const busy = current.busy
-      return h(
-        Card,
-        {
-          title: t('npm.title'),
-          meta: npm === null ? '' : t('common.count').replace('{count}', String(npm.rows.length)),
-        },
-        npm === null || npm.prefix === ''
-          ? null
-          : h('div', { className: 'dtm-path' }, `${t('npm.prefix')}: ${npm.prefix}`),
-        h(
-          'div',
-          { className: 'dtm-row' },
-          h('input', {
-            className: 'dtm-input',
-            value: current.npmName,
-            placeholder: t('npm.installPlaceholder'),
-            spellCheck: false,
-            onChange: (event) => patch({ npmName: event.currentTarget.value }),
-          }),
-          h('input', {
-            className: 'dtm-input dtm-narrow',
-            value: current.npmVersion,
-            placeholder: t('common.version'),
-            spellCheck: false,
-            onChange: (event) => patch({ npmVersion: event.currentTarget.value }),
-          }),
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'dtm-btn dtm-primary',
-              disabled: busy === 'npm-install',
-              onClick: () => {
-                if (state.npmName.trim() === '') {
-                  patch({ error: t('error.prefix') + t('error.name') })
-                  return
-                }
-                void act(t, 'npm-install', { name: state.npmName, version: state.npmVersion }, 'npm-install')
-              },
-            },
-            busy === 'npm-install' ? t('common.installing') : t('common.install'),
-          ),
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'dtm-btn',
-              disabled: busy === 'npm-cache-clean',
-              onClick: () => void act(t, 'npm-cache-clean', {}, 'npm-cache-clean'),
-            },
-            busy === 'npm-cache-clean' ? t('common.running') : t('npm.cache'),
-          ),
-        ),
-        h(
-          'div',
-          { className: 'dtm-list' },
-          npm !== null && npm.rows.length > 0
-            ? npm.rows.map((row) =>
-              h(
-                'div',
-                { className: 'dtm-item', key: row.name },
-                h(
-                  'div',
-                  { className: 'dtm-item-main' },
-                  h('span', { className: 'dtm-item-name' }, row.name),
-                  h('span', { className: 'dtm-item-version' }, row.version),
-                ),
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'dtm-btn dtm-small',
-                    disabled: busy === `npm-uninstall:${row.name}`,
-                    onClick: () => void act(t, 'npm-uninstall', { name: row.name }, `npm-uninstall:${row.name}`),
-                  },
-                  busy === `npm-uninstall:${row.name}` ? t('common.removing') : t('common.delete'),
-                ),
-              ),
-            )
-            : h('p', { className: 'dtm-hint' }, current.loading ? t('common.loading') : t('common.empty')),
-        ),
-      )
-    }
-
-    function PipCard(props) {
-      const t = props.t
-      const current = useStore()
-      const pip = current.pip
-      const busy = current.busy
-      const overview = current.overview
-      const venvs = overview === null ? [] : overview.venvs
-      return h(
-        Card,
-        {
-          title: t('pip.title'),
-          meta: pip === null ? '' : t('common.count').replace('{count}', String(pip.rows.length)),
-        },
-        h(
-          'div',
-          { className: 'dtm-row' },
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'dtm-btn' + (current.pipScope === '' ? ' dtm-on' : ''),
-              onClick: () => {
-                patch({ pipScope: '' })
-                void refreshPackages(t)
-              },
-            },
-            t('pip.scopeUser'),
-          ),
-          venvs.length === 0
-            ? null
-            : h(
-              'select',
-              {
-                className: 'dtm-select',
-                value: current.pipScope,
-                onChange: (event) => {
-                  patch({ pipScope: event.currentTarget.value })
-                  void refreshPackages(t)
-                },
-              },
-              h('option', { value: '' }, '—'),
-              venvs.map((venv) => h('option', { key: venv.name, value: venv.name }, `${venv.name}`)),
-            ),
-        ),
-        venvs.length > 0
-          ? h(
-            'div',
-            { className: 'dtm-venvs' },
-            venvs.map((venv) =>
+              'span',
+              { className: 'dtm-chip' + (tool.present ? '' : ' dtm-chip-off'), key: tool.id, title: tool.path || '' },
+              h('span', { className: 'dtm-chip-name' }, tool.label),
               h(
                 'span',
-                { className: 'dtm-chip', key: venv.name },
-                h('span', null, venv.name),
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    title: t('pip.removeVenv'),
-                    disabled: busy === `venv-remove:${venv.name}`,
-                    onClick: () => void removeVenv(t, venv.name, busy),
-                  },
-                  '×',
-                ),
+                { className: 'dtm-chip-value' },
+                tool.present ? (tool.version || '').replace(/^[^0-9]*/, '') || '✓' : t('tools.missing'),
               ),
             ),
-          )
-          : null,
-        h(
-          'div',
-          { className: 'dtm-row' },
-          h('input', {
-            className: 'dtm-input',
-            value: current.pipName,
-            placeholder: t('common.name'),
-            spellCheck: false,
-            onChange: (event) => patch({ pipName: event.currentTarget.value }),
-          }),
-          h('input', {
-            className: 'dtm-input dtm-narrow',
-            value: current.pipVersion,
-            placeholder: t('common.version'),
-            spellCheck: false,
-            onChange: (event) => patch({ pipVersion: event.currentTarget.value }),
-          }),
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'dtm-btn dtm-primary',
-              disabled: busy === 'pip-install',
-              onClick: () => {
-                if (state.pipName.trim() === '') {
-                  patch({ error: t('error.prefix') + t('error.name') })
-                  return
-                }
-                void act(
-                  t,
-                  'pip-install',
-                  { name: state.pipName, version: state.pipVersion, venv: state.pipScope },
-                  'pip-install',
-                )
-              },
-            },
-            busy === 'pip-install' ? t('common.installing') : t('common.install'),
-          ),
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'dtm-btn',
-              disabled: busy === 'pip-cache-purge',
-              onClick: () => void act(t, 'pip-cache-purge', {}, 'pip-cache-purge'),
-            },
-            busy === 'pip-cache-purge' ? t('common.running') : t('pip.cache'),
-          ),
-        ),
-        h(
-          'div',
-          { className: 'dtm-list' },
-          pip !== null && pip.rows.length > 0
-            ? pip.rows.map((row) =>
-              h(
-                'div',
-                { className: 'dtm-item', key: row.name },
-                h(
-                  'div',
-                  { className: 'dtm-item-main' },
-                  h('span', { className: 'dtm-item-name' }, row.name),
-                  h('span', { className: 'dtm-item-version' }, row.version),
-                ),
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'dtm-btn dtm-small',
-                    disabled: busy === `pip-uninstall:${row.name}`,
-                    onClick: () =>
-                      void act(
-                        t,
-                        'pip-uninstall',
-                        { name: row.name, venv: state.pipScope },
-                        `pip-uninstall:${row.name}`,
-                      ),
-                  },
-                  busy === `pip-uninstall:${row.name}` ? t('common.removing') : t('common.delete'),
-                ),
-              ),
-            )
-            : h('p', { className: 'dtm-hint' }, current.loading ? t('common.loading') : t('common.empty')),
-        ),
-        h(
-          'div',
-          { className: 'dtm-row' },
-          h('input', {
-            className: 'dtm-input dtm-narrow',
-            value: current.venvName,
-            placeholder: t('pip.venvName'),
-            spellCheck: false,
-            onChange: (event) => patch({ venvName: event.currentTarget.value }),
-          }),
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'dtm-btn',
-              disabled: busy === 'venv-create',
-              onClick: () => {
-                if (state.venvName.trim() === '') {
-                  patch({ error: t('error.prefix') + t('error.venv') })
-                  return
-                }
-                void act(t, 'venv-create', { name: state.venvName }, 'venv-create')
-                patch({ venvName: '' })
-              },
-            },
-            busy === 'venv-create' ? t('pip.createRunning') : t('pip.createVenv'),
           ),
         ),
       )
-    }
-
-    async function removeVenv(t, name, busy) {
-      if (busy === `venv-remove:${name}`) return
-      const key = `venv:${name}`
-      if (state.confirm !== key) {
-        patch({ confirm: key, notice: '' })
-        return
-      }
-      patch({ confirm: '' })
-      if (state.pipScope === name) patch({ pipScope: '' })
-      await act(t, 'venv-remove', { name }, `venv-remove:${name}`)
     }
 
     function LogCard(props) {
       const t = props.t
       const current = useStore()
       const log = current.log
-      if (log === null) {
-        return h(Card, { title: t('log.title') }, h('p', { className: 'dtm-hint' }, t('log.empty')))
-      }
+      if (log === null) return null
       return h(
         Card,
         { title: t('log.title'), meta: `${log.durationMs} ms` },
@@ -656,32 +516,7 @@ window.__ModuleLoader__.load({
       )
     }
 
-    function EnvCard(props) {
-      const t = props.t
-      const current = useStore()
-      const overview = current.overview
-      if (overview === null) return null
-      const keys = Object.keys(overview.env)
-      if (keys.length === 0) return null
-      return h(
-        Card,
-        { title: t('env.title') },
-        h(
-          'div',
-          { className: 'dtm-env' },
-          keys.map((key) =>
-            h(
-              'div',
-              { className: 'dtm-env-row', key },
-              h('span', { className: 'dtm-env-key' }, key),
-              h('span', { className: 'dtm-env-value' }, overview.env[key]),
-            ),
-          ),
-        ),
-      )
-    }
-
-    // ------------------------------------------------------------------- page
+    // ------------------------------------------------------------------ page
 
     function ToolchainSection(props) {
       const t = props.t
@@ -697,12 +532,11 @@ window.__ModuleLoader__.load({
       if (current.overview === null && current.loading) {
         body.push(h('p', { className: 'dtm-hint', key: 'loading' }, t('common.loading')))
       }
-      body.push(h(RootCard, { key: 'root', t }))
+      body.push(h(InstalledCard, { key: 'installed', t }))
+      body.push(h(PresetsCard, { key: 'presets', t }))
+      body.push(h(CleanCard, { key: 'clean', t }))
       body.push(h(ToolsCard, { key: 'tools', t }))
-      body.push(h(NpmCard, { key: 'npm', t }))
-      body.push(h(PipCard, { key: 'pip', t }))
       body.push(h(LogCard, { key: 'log', t }))
-      body.push(h(EnvCard, { key: 'env', t }))
 
       return h(
         'div',
@@ -720,12 +554,7 @@ window.__ModuleLoader__.load({
           h('div', { className: 'dtm-grow' }),
           h(
             'button',
-            {
-              type: 'button',
-              className: 'dtm-btn',
-              disabled: current.loading,
-              onClick: () => void loadAll(t),
-            },
+            { type: 'button', className: 'dtm-btn', disabled: current.loading, onClick: () => void loadAll(t) },
             t('common.refresh'),
           ),
         ),
@@ -746,46 +575,47 @@ window.__ModuleLoader__.load({
       '.dtm-grow{flex:1 1 auto;min-width:0}',
       '.dtm-body{display:flex;flex-direction:column;gap:14px;min-width:0}',
       '.dtm-card{display:flex;flex-direction:column;gap:10px;border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.12));border-radius:12px;padding:14px 16px;background:var(--dsw-alias-bg-layer-1,transparent);min-width:0}',
-      '.dtm-card-head{display:flex;align-items:baseline;gap:10px;min-width:0}',
-      '.dtm-card-title{margin:0;font-size:.95em;font-weight:600}',
+      '.dtm-card-head{display:flex;align-items:center;gap:10px;min-width:0}',
+      '.dtm-card-title{margin:0;font-size:.95em;font-weight:600;flex:none}',
       '.dtm-meta{margin-left:auto;font-size:.78em;color:var(--dsw-alias-label-tertiary,#6e7781);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.dtm-tabs{display:flex;gap:4px;margin-left:auto;flex:none}',
+      '.dtm-tab{appearance:none;border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));background:transparent;color:var(--dsw-alias-label-secondary,#57606a);border-radius:999px;padding:3px 10px;font:inherit;font-size:.8em;cursor:pointer;line-height:1.4}',
+      '.dtm-tab-on{background:var(--dsw-alias-state-business-primary,#247bbf);border-color:transparent;color:#fff;font-weight:600}',
       '.dtm-path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76em;line-height:1.5;color:var(--dsw-alias-label-tertiary,#6e7781);word-break:break-all}',
       '.dtm-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}',
       '.dtm-btn{appearance:none;border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));background:transparent;color:inherit;border-radius:8px;padding:6px 11px;font:inherit;font-size:.86em;line-height:1.4;cursor:pointer;white-space:nowrap}',
       '.dtm-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(31,35,40,.06))}',
       '.dtm-btn:disabled{opacity:.5;cursor:not-allowed}',
-      '.dtm-btn:focus-visible,.dtm-input:focus-visible,.dtm-select:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#247bbf);outline-offset:1px}',
+      '.dtm-btn:focus-visible,.dtm-input:focus-visible,.dtm-select:focus-visible,.dtm-preset:focus-visible,.dtm-tab:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#247bbf);outline-offset:1px}',
       '.dtm-btn.dtm-small{padding:3px 9px;font-size:.8em}',
-      '.dtm-btn.dtm-on{border-color:var(--dsw-alias-state-business-primary,#247bbf);color:var(--dsw-alias-state-business-primary,#247bbf)}',
       '.dtm-btn.dtm-primary{background:var(--dsw-alias-state-business-primary,#247bbf);border-color:transparent;color:#fff;font-weight:600}',
       '.dtm-btn.dtm-danger{border-color:var(--dsw-alias-state-error-primary,#cf222e);color:var(--dsw-alias-state-error-primary,#cf222e)}',
-      '.dtm-input,.dtm-select{border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));background:var(--dsw-alias-bg-layer-2,rgba(31,35,40,.03));color:inherit;border-radius:8px;padding:7px 10px;font:inherit;font-size:.88em;min-width:0;flex:1 1 180px}',
-      '.dtm-input.dtm-narrow,.dtm-select{flex:0 1 150px}',
-      '.dtm-sizes{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:4px 18px}',
-      '.dtm-size-row{display:flex;align-items:baseline;gap:8px;font-size:.84em;min-width:0}',
-      '.dtm-size-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;flex:none}',
-      '.dtm-size-role{color:var(--dsw-alias-label-tertiary,#6e7781);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}',
-      '.dtm-size-value{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,#57606a);flex:none}',
-      '.dtm-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 18px}',
-      '.dtm-tool{display:flex;flex-direction:column;gap:1px;min-width:0;font-size:.84em}',
-      '.dtm-tool.dtm-off{opacity:.55}',
-      '.dtm-tool-name{font-weight:600}',
-      '.dtm-tool-version{color:var(--dsw-alias-label-secondary,#57606a);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-      '.dtm-tool-path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;color:var(--dsw-alias-label-tertiary,#6e7781);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.dtm-input,.dtm-select{border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));background:var(--dsw-alias-bg-layer-2,rgba(31,35,40,.03));color:inherit;border-radius:8px;padding:7px 10px;font:inherit;font-size:.88em;min-width:0;flex:1 1 160px}',
+      '.dtm-select{flex:0 1 190px}',
       '.dtm-list{display:flex;flex-direction:column;gap:2px;max-height:280px;overflow:auto}',
-      '.dtm-item{display:flex;align-items:center;gap:10px;padding:5px 4px;border-radius:8px;min-width:0}',
+      '.dtm-item{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px;min-width:0}',
       '.dtm-item:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(31,35,40,.04))}',
       '.dtm-item-main{display:flex;align-items:baseline;gap:8px;min-width:0;flex:1 1 auto}',
       '.dtm-item-name{font-size:.86em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dtm-item-version{font-size:.76em;color:var(--dsw-alias-label-tertiary,#6e7781);flex:none}',
-      '.dtm-venvs{display:flex;gap:6px;flex-wrap:wrap}',
-      '.dtm-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));border-radius:999px;padding:2px 4px 2px 9px;font-size:.8em;color:var(--dsw-alias-label-secondary,#57606a)}',
-      '.dtm-chip button{appearance:none;border:0;background:transparent;color:inherit;font:inherit;line-height:1;cursor:pointer;padding:2px 5px;border-radius:999px;opacity:.7}',
-      '.dtm-chip button:hover{opacity:1;background:var(--dsw-alias-interactive-bg-hover,rgba(31,35,40,.08))}',
-      '.dtm-env{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:2px 18px}',
-      '.dtm-env-row{display:flex;gap:8px;font-size:.8em;min-width:0}',
-      '.dtm-env-key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dsw-alias-label-tertiary,#6e7781);flex:none}',
-      '.dtm-env-value{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}',
+      '.dtm-presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px}',
+      '.dtm-preset{appearance:none;display:flex;align-items:center;gap:6px;border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));background:var(--dsw-alias-bg-layer-2,rgba(31,35,40,.03));color:inherit;border-radius:10px;padding:8px 10px;font:inherit;font-size:.84em;cursor:pointer;min-width:0;text-align:left}',
+      '.dtm-preset:hover:not(:disabled){border-color:var(--dsw-alias-state-business-primary,#247bbf)}',
+      '.dtm-preset:disabled{opacity:.6;cursor:progress}',
+      '.dtm-preset-on{border-color:var(--dsw-alias-state-success-primary,#2da44e);background:transparent}',
+      '.dtm-preset-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}',
+      '.dtm-preset-state{margin-left:auto;flex:none;font-size:.82em;color:var(--dsw-alias-label-tertiary,#6e7781)}',
+      '.dtm-preset-on .dtm-preset-state{color:var(--dsw-alias-state-success-primary,#2da44e)}',
+      '.dtm-clean{display:flex;flex-direction:column;gap:2px}',
+      '.dtm-clean-row{display:flex;align-items:center;gap:8px;padding:5px 2px;min-width:0;font-size:.86em}',
+      '.dtm-clean-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;flex:none}',
+      '.dtm-clean-role{color:var(--dsw-alias-label-tertiary,#6e7781);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.dtm-clean-size{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,#57606a);flex:none;font-size:.92em}',
+      '.dtm-chips{display:flex;flex-wrap:wrap;gap:6px}',
+      '.dtm-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));border-radius:999px;padding:2px 9px;font-size:.8em;color:var(--dsw-alias-label-secondary,#57606a)}',
+      '.dtm-chip-off{opacity:.55}',
+      '.dtm-chip-name{font-weight:600}',
+      '.dtm-chip-value{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;color:var(--dsw-alias-label-tertiary,#6e7781)}',
       '.dtm-pre{margin:0;padding:9px 11px;border-radius:8px;background:var(--dsw-alias-bg-layer-2,rgba(31,35,40,.04));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76em;line-height:1.6;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word}',
       '.dtm-pre.dtm-err{color:var(--dsw-alias-state-error-primary,#cf222e)}',
       '.dtm-error{border:1px solid var(--dsw-alias-state-error-primary,#cf222e);color:var(--dsw-alias-state-error-primary,#cf222e);border-radius:10px;padding:9px 12px;font-size:.86em;line-height:1.55;white-space:pre-wrap}',
@@ -813,7 +643,6 @@ window.__ModuleLoader__.load({
 
       ctx.effect(() => injectStyle(), 'toolchain-manager: styles')
 
-      // Settings tab between 模型 (order 10) and 内置插件 (order 15).
       ctx.effect(
         () =>
           ctx.slots.inject('settings.section', () =>
@@ -835,10 +664,7 @@ window.__ModuleLoader__.load({
       ctx.effect(
         () =>
           ctx.slots.inject('settings.section.icon', () =>
-            ctx.slots.register(
-              { name: 'settings.section.icon', id: SECTION_ID, locale: NS },
-              SectionIcon,
-            ),
+            ctx.slots.register({ name: 'settings.section.icon', id: SECTION_ID, locale: NS }, SectionIcon),
           ),
         'toolchain-manager: settings icon',
       )
