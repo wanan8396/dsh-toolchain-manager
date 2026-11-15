@@ -523,26 +523,39 @@ window.__ModuleLoader__.load({
       )
     }
 
+    /** First dotted number in a version line: "gcc (Ubuntu 13.3.0-6ubuntu)…" → 13.3.0 */
+    function shortVersion(text) {
+      const value = String(text || '')
+      const match = /\d+(?:\.\d+)+/.exec(value)
+      if (match !== null) return match[0]
+      const single = /\d+/.exec(value)
+      return single === null ? '' : single[0]
+    }
+
     function ToolsCard(props) {
       const t = props.t
       const current = useStore()
       const overview = current.overview
       if (overview === null) return null
+      const present = overview.tools.filter((tool) => tool.present)
+      const missing = overview.tools.filter((tool) => !tool.present)
+      const rows = [...present, ...missing]
+      const meta = `${present.length}/${overview.tools.length}${missing.length === 0 ? '' : ` · ${t('tools.missing')} ${missing.length}`}`
       return h(
         Card,
-        { title: t('tools.title'), meta: overview.platform },
+        { title: t('tools.title'), meta },
         h(
           'div',
-          { className: 'dtm-chips' },
-          overview.tools.map((tool) =>
+          { className: 'dtm-tools' },
+          rows.map((tool) =>
             h(
-              'span',
-              { className: 'dtm-chip' + (tool.present ? '' : ' dtm-chip-off'), key: tool.id, title: tool.path || '' },
-              h('span', { className: 'dtm-chip-name' }, tool.label),
+              'div',
+              { className: 'dtm-tool' + (tool.present ? '' : ' dtm-tool-off'), key: tool.id, title: tool.path || tool.command },
+              h('span', { className: 'dtm-tool-name' }, tool.label),
               h(
                 'span',
-                { className: 'dtm-chip-value' },
-                tool.present ? (tool.version || '').replace(/^[^0-9]*/, '') || '✓' : t('tools.missing'),
+                { className: 'dtm-tool-version' },
+                tool.present ? shortVersion(tool.version) || '✓' : t('tools.missing'),
               ),
             ),
           ),
@@ -660,11 +673,11 @@ window.__ModuleLoader__.load({
       '.dtm-clean-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;flex:none}',
       '.dtm-clean-role{color:var(--dsw-alias-label-tertiary,#6e7781);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dtm-clean-size{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,#57606a);flex:none;font-size:.92em}',
-      '.dtm-chips{display:flex;flex-wrap:wrap;gap:6px}',
-      '.dtm-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.16));border-radius:999px;padding:2px 9px;font-size:.8em;color:var(--dsw-alias-label-secondary,#57606a)}',
-      '.dtm-chip-off{opacity:.55}',
-      '.dtm-chip-name{font-weight:600}',
-      '.dtm-chip-value{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;color:var(--dsw-alias-label-tertiary,#6e7781)}',
+      '.dtm-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px 22px}',
+      '.dtm-tool{display:flex;align-items:baseline;gap:10px;min-width:0;font-size:.86em;padding:3px 0;border-bottom:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.07))}',
+      '.dtm-tool-off{color:var(--dsw-alias-label-tertiary,#6e7781)}',
+      '.dtm-tool-name{font-weight:600;flex:none;min-width:78px}',
+      '.dtm-tool-version{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.95em;color:var(--dsw-alias-label-secondary,#57606a);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dtm-pre{margin:0;padding:9px 11px;border-radius:8px;background:var(--dsw-alias-bg-layer-2,rgba(31,35,40,.04));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76em;line-height:1.6;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word}',
       '.dtm-pre.dtm-err{color:var(--dsw-alias-state-error-primary,#cf222e)}',
       '.dtm-error{border:1px solid var(--dsw-alias-state-error-primary,#cf222e);color:var(--dsw-alias-state-error-primary,#cf222e);border-radius:10px;padding:9px 12px;font-size:.86em;line-height:1.55;white-space:pre-wrap}',
