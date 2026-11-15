@@ -14,7 +14,7 @@
 
 import { execFile } from 'node:child_process'
 import { existsSync, realpathSync } from 'node:fs'
-import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -52,6 +52,31 @@ function dependencyRoot() {
   const configured = typeof process.env.DSH_DEPENDENCY_ROOT === 'string' ? process.env.DSH_DEPENDENCY_ROOT.trim() : ''
   if (configured !== '') return path.resolve(configured)
   return path.resolve(os.homedir(), '.local', 'share', 'deepseek-harness', 'dependencies')
+}
+
+function dshHome() {
+  const configured = typeof process.env.DSH_HOME === 'string' ? process.env.DSH_HOME.trim() : ''
+  return configured === '' ? path.join(os.homedir(), '.dsh') : path.resolve(configured)
+}
+
+/** Which toolchains this plugin installed, so it can also uninstall them. */
+function ledgerPath() {
+  return path.join(dshHome(), 'toolchain-manager', 'installed.json')
+}
+
+async function readLedger() {
+  try {
+    const parsed = JSON.parse(await readFile(ledgerPath(), 'utf8'))
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+async function writeLedger(ledger) {
+  const file = ledgerPath()
+  await mkdir(path.dirname(file), { recursive: true })
+  await writeFile(file, `${JSON.stringify(ledger, null, 2)}\n`, 'utf8')
 }
 
 const ROOT_ROLES = [
@@ -197,6 +222,7 @@ function npmOwner(file) {
 }
 
 async function probeTools() {
+  const ledger = await readLedger()
   const results = await Promise.all(
     TOOLS.map(async (tool) => {
       const where = await whichCommand(tool.command)
@@ -210,6 +236,7 @@ async function probeTools() {
           path: '',
           owner: 'system',
           removable: false,
+          removal: null,
           install: INSTALLS[tool.id] === undefined ? null : INSTALLS[tool.id],
           package: '',
           prefix: '',
@@ -218,6 +245,8 @@ async function probeTools() {
       const result = await run(tool.command, tool.args, { timeout: 15_000 })
       const owned = npmOwner(where)
       const insideRoot = path.resolve(where).startsWith(`${dependencyRoot()}${path.sep}`)
+      const recorded = ledger[tool.id]
+      const managed = recorded !== undefined && recorded !== null
       return {
         id: tool.id,
         label: tool.label,
@@ -225,8 +254,9 @@ async function probeTools() {
         version: firstLine(`${result.stdout}\n${result.stderr}`),
         command: [tool.command, ...tool.args].join(' '),
         path: where,
-        owner: owned !== null ? 'npm-global' : insideRoot ? 'dependency' : 'system',
-        removable: owned !== null || insideRoot,
+        owner: managed ? 'plugin' : owned !== null ? 'npm-global' : insideRoot ? 'dependency' : 'system',
+        removable: managed || owned !== null || insideRoot,
+        removal: managed ? recorded : owned !== null ? { method: 'npm', package: owned.package, prefix: owned.prefix } : null,
         install: INSTALLS[tool.id] === undefined ? null : INSTALLS[tool.id],
         package: owned === null ? '' : owned.package,
         prefix: owned === null ? '' : owned.prefix,
@@ -394,14 +424,17 @@ async function installTool(input) {
     throw new HttpError(409, `${tool.label} 已经安装`, 'E_EXISTS')
   }
   const spec = INSTALLS[id]
-  if (spec.method === 'npm') {
-    const result = await run('npm', ['install', '-g', spec.package], { timeout: 600_000 })
-    return { ...result, action: 'tool-install' }
+  const result = spec.method === 'npm'
+    ? await run('npm', ['install', '-g', spec.package], { timeout: 600_000 })
+    : await run('apt-get', ['install', '-y', '--no-install-recommends', spec.package], {
+      timeout: 600_000,
+      env: { DEBIAN_FRONTEND: 'noninteractive' },
+    })
+  if (result.ok) {
+    const ledger = await readLedger()
+    ledger[id] = { method: spec.method, package: spec.package, at: new Date().toISOString() }
+    await writeLedger(ledger)
   }
-  const result = await run('apt-get', ['install', '-y', '--no-install-recommends', spec.package], {
-    timeout: 600_000,
-    env: { DEBIAN_FRONTEND: 'noninteractive' },
-  })
   return { ...result, action: 'tool-install' }
 }
 
@@ -412,8 +445,23 @@ async function removeTool(input) {
   if (tool === undefined) throw new HttpError(400, `未知工具链：${id}`, 'E_TOOL')
   const where = await whichCommand(tool.command)
   if (where === '') throw new HttpError(404, `${tool.label} 未安装`, 'E_MISSING')
-  const owned = npmOwner(where)
+  const ledger = await readLedger()
+  const recorded = ledger[id]
   const started = Date.now()
+  if (recorded !== undefined && recorded !== null) {
+    const result = recorded.method === 'npm'
+      ? await run('npm', ['uninstall', '-g', recorded.package], { timeout: COMMAND_TIMEOUT_MS })
+      : await run('apt-get', ['remove', '-y', recorded.package], {
+        timeout: COMMAND_TIMEOUT_MS,
+        env: { DEBIAN_FRONTEND: 'noninteractive' },
+      })
+    if (result.ok) {
+      delete ledger[id]
+      await writeLedger(ledger)
+    }
+    return { ...result, action: 'tool-remove' }
+  }
+  const owned = npmOwner(where)
   if (owned !== null) {
     const result = await run('npm', ['uninstall', '-g', owned.package, '--prefix', owned.prefix], { timeout: COMMAND_TIMEOUT_MS })
     return { ...result, action: 'tool-remove' }

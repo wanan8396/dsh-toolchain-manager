@@ -31,8 +31,10 @@ Two lists and one grid:
   - **安装 / Install** on a missing row runs `apt-get install -y --no-install-recommends` inside the
     DSH root (or `npm install -g` for pnpm): `make`, `gcc`, `git`, `cargo`, `rustc`, `golang-go`,
     `default-jdk-headless`, `python3`, `python3-pip`, `pnpm`.
-  - **删除 / Delete** (two taps) uninstalls a toolchain DSH owns — one installed through an npm
-    global prefix or living inside the dependency root.
+  - **删除 / Delete** (two taps) uninstalls a toolchain this plugin installed: the install is
+    recorded in `$DSH_HOME/toolchain-manager/installed.json` and removal runs the matching
+    `apt-get remove -y <package>` (or `npm uninstall -g`). Toolchains that already lived in an npm
+    global prefix or inside the dependency root are removable the same way.
   - OS-provided binaries are marked **系统自带 / System**; deleting them would break the running
     Harness, and `node`/`npm` themselves are never offered for install or removal.
 - **最近一次操作** — the exact command, exit code, duration and truncated output.

@@ -583,6 +583,10 @@ window.__ModuleLoader__.load({
                   type: 'button',
                   className: 'dtm-btn dtm-small' + (armed ? ' dtm-danger' : ''),
                   disabled: current.busy === busyKey,
+                  title:
+                    tool.removal === null || tool.removal === undefined
+                      ? ''
+                      : `${tool.removal.method}: ${tool.removal.package}${tool.owner === 'plugin' ? ' · 由本插件安装' : ''}`,
                   onClick: () => {
                     if (!armed) {
                       patch({ confirm: busyKey })
