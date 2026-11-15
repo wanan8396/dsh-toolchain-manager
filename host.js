@@ -13,7 +13,7 @@
  */
 
 import { execFile } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -152,6 +152,34 @@ async function whichCommand(command) {
   return firstLine(result.stdout)
 }
 
+/** Every npm global prefix in play: the DSH one first, then the OS default. */
+function npmPrefixes() {
+  const list = []
+  const configured = process.env.NPM_CONFIG_PREFIX || ''
+  if (configured !== '') list.push(path.resolve(configured))
+  if (!list.includes('/usr/local')) list.push('/usr/local')
+  return list
+}
+
+/** Package name owned by an npm-global bin path, or null. */
+function npmOwner(file) {
+  let resolved
+  try {
+    resolved = realpathSync(file)
+  } catch {
+    resolved = file
+  }
+  for (const prefix of npmPrefixes()) {
+    const modules = path.join(prefix, 'lib', 'node_modules')
+    if (!resolved.startsWith(`${modules}${path.sep}`)) continue
+    const rest = resolved.slice(modules.length + 1).split(path.sep)
+    if (rest.length === 0 || rest[0] === '') continue
+    const name = rest[0].startsWith('@') && rest.length > 1 ? `${rest[0]}/${rest[1]}` : rest[0]
+    return { package: name, prefix }
+  }
+  return null
+}
+
 async function probeTools() {
   const results = await Promise.all(
     TOOLS.map(async (tool) => {
@@ -164,9 +192,15 @@ async function probeTools() {
           version: '',
           command: [tool.command, ...tool.args].join(' '),
           path: '',
+          owner: 'system',
+          removable: false,
+          package: '',
+          prefix: '',
         }
       }
       const result = await run(tool.command, tool.args, { timeout: 15_000 })
+      const owned = npmOwner(where)
+      const insideRoot = path.resolve(where).startsWith(`${dependencyRoot()}${path.sep}`)
       return {
         id: tool.id,
         label: tool.label,
@@ -174,6 +208,10 @@ async function probeTools() {
         version: firstLine(`${result.stdout}\n${result.stderr}`),
         command: [tool.command, ...tool.args].join(' '),
         path: where,
+        owner: owned !== null ? 'npm-global' : insideRoot ? 'dependency' : 'system',
+        removable: owned !== null || insideRoot,
+        package: owned === null ? '' : owned.package,
+        prefix: owned === null ? '' : owned.prefix,
       }
     }),
   )
@@ -326,6 +364,39 @@ async function listPip(venv) {
   return { rows, venv: venv || '', scope: target === '' ? 'user' : 'venv', raw: result.ok ? '' : result.stderr }
 }
 
+/** Remove one toolchain that DSH itself owns; system binaries stay protected. */
+async function removeTool(input) {
+  const id = String(input.id || '')
+  const tool = TOOLS.find((item) => item.id === id)
+  if (tool === undefined) throw new HttpError(400, `未知工具链：${id}`, 'E_TOOL')
+  const where = await whichCommand(tool.command)
+  if (where === '') throw new HttpError(404, `${tool.label} 未安装`, 'E_MISSING')
+  const owned = npmOwner(where)
+  const started = Date.now()
+  if (owned !== null) {
+    const result = await run('npm', ['uninstall', '-g', owned.package, '--prefix', owned.prefix], { timeout: COMMAND_TIMEOUT_MS })
+    return { ...result, action: 'tool-remove' }
+  }
+  const resolved = path.resolve(where)
+  if (!resolved.startsWith(`${dependencyRoot()}${path.sep}`)) {
+    throw new HttpError(
+      403,
+      `${tool.label} 是系统自带的（${where}），删掉会破坏 DSH 运行；只有装在依赖根目录或 npm 全局前缀里的工具链可以从这里删除`,
+      'E_PROTECTED',
+    )
+  }
+  await rm(resolved, { force: true })
+  return {
+    ok: true,
+    code: 0,
+    stdout: `removed ${resolved}`,
+    stderr: '',
+    command: `rm -f ${resolved}`,
+    durationMs: Date.now() - started,
+    action: 'tool-remove',
+  }
+}
+
 const ACTIONS = {
   'npm-install': (input) => {
     const pkg = assertPackage(input.name)
@@ -392,6 +463,7 @@ async function cleanDirectory(input) {
 async function runAction(input) {
   const action = String(input.action || '')
   if (action === 'dir-clean') return cleanDirectory(input)
+  if (action === 'tool-remove') return removeTool(input)
   const factory = ACTIONS[action]
   if (factory === undefined) throw new HttpError(400, `未知操作：${action}`, 'E_ACTION')
   const [command, args] = factory(input)

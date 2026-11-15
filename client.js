@@ -71,6 +71,10 @@ window.__ModuleLoader__.load({
       'clean.confirm': '确认清空？',
       'tools.title': '工具链',
       'tools.missing': '未装',
+      'tools.remove': '删除',
+      'tools.removing': '删除中…',
+      'tools.confirm': '确认删除？',
+      'tools.protected': '系统自带',
       'log.title': '最近一次操作',
       'log.empty': '还没有执行过操作',
       'notice.done': '完成：{command}',
@@ -123,6 +127,10 @@ window.__ModuleLoader__.load({
       'clean.confirm': 'Empty it?',
       'tools.title': 'Toolchains',
       'tools.missing': 'missing',
+      'tools.remove': 'Delete',
+      'tools.removing': 'Deleting…',
+      'tools.confirm': 'Delete it?',
+      'tools.protected': 'System',
       'log.title': 'Last action',
       'log.empty': 'No action yet',
       'notice.done': 'Done: {command}',
@@ -547,8 +555,38 @@ window.__ModuleLoader__.load({
         h(
           'div',
           { className: 'dtm-tools' },
-          rows.map((tool) =>
-            h(
+          rows.map((tool) => {
+            const busyKey = `tool:${tool.id}`
+            const armed = current.confirm === busyKey
+            let action = null
+            if (tool.present !== true) {
+              action = null
+            } else if (tool.removable === true) {
+              action = h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'dtm-btn dtm-small' + (armed ? ' dtm-danger' : ''),
+                  disabled: current.busy === busyKey,
+                  onClick: () => {
+                    if (!armed) {
+                      patch({ confirm: busyKey })
+                      return
+                    }
+                    patch({ confirm: '' })
+                    void act(t, 'tool-remove', { id: tool.id }, busyKey, true)
+                  },
+                },
+                current.busy === busyKey ? t('tools.removing') : armed ? t('tools.confirm') : t('tools.remove'),
+              )
+            } else {
+              action = h(
+                'span',
+                { className: 'dtm-protected', title: tool.path === '' ? '' : `${tool.path} — 删掉会破坏 DSH 运行` },
+                t('tools.protected'),
+              )
+            }
+            return h(
               'div',
               { className: 'dtm-tool' + (tool.present ? '' : ' dtm-tool-off'), key: tool.id, title: tool.path || tool.command },
               h('span', { className: 'dtm-tool-name' }, tool.label),
@@ -557,8 +595,9 @@ window.__ModuleLoader__.load({
                 { className: 'dtm-tool-version' },
                 tool.present ? shortVersion(tool.version) || '✓' : t('tools.missing'),
               ),
-            ),
-          ),
+              action,
+            )
+          }),
         ),
       )
     }
@@ -674,10 +713,10 @@ window.__ModuleLoader__.load({
       '.dtm-clean-role{color:var(--dsw-alias-label-tertiary,#6e7781);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dtm-clean-size{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,#57606a);flex:none;font-size:.92em}',
       '.dtm-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px 22px}',
-      '.dtm-tool{display:flex;align-items:baseline;gap:10px;min-width:0;font-size:.86em;padding:3px 0;border-bottom:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.07))}',
+      '.dtm-tool{display:flex;align-items:center;gap:10px;min-width:0;font-size:.86em;padding:4px 0;border-bottom:1px solid var(--dsw-alias-border-l1,rgba(31,35,40,.07))}',
       '.dtm-tool-off{color:var(--dsw-alias-label-tertiary,#6e7781)}',
-      '.dtm-tool-name{font-weight:600;flex:none;min-width:78px}',
-      '.dtm-tool-version{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.95em;color:var(--dsw-alias-label-secondary,#57606a);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.dtm-tool-name{font-weight:600;flex:none;min-width:74px}',
+      '.dtm-tool-version{margin-left:auto;flex:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.95em;color:var(--dsw-alias-label-secondary,#57606a);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dtm-pre{margin:0;padding:9px 11px;border-radius:8px;background:var(--dsw-alias-bg-layer-2,rgba(31,35,40,.04));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76em;line-height:1.6;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word}',
       '.dtm-pre.dtm-err{color:var(--dsw-alias-state-error-primary,#cf222e)}',
       '.dtm-error{border:1px solid var(--dsw-alias-state-error-primary,#cf222e);color:var(--dsw-alias-state-error-primary,#cf222e);border-radius:10px;padding:9px 12px;font-size:.86em;line-height:1.55;white-space:pre-wrap}',

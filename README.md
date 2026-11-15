@@ -27,7 +27,10 @@ Two lists and one grid:
   (`cache`, `downloads`, `build`, `tmp`) have an **清空 / Empty** button that empties and recreates
   the directory; the others are marked **受保护 / Protected** because they hold installed plugins,
   package prefixes or backups.
-- **工具链 / Toolchains** — installed versions as compact chips, missing ones dimmed.
+- **工具链 / Toolchains** — an aligned list of name + version (installed first, missing dimmed).
+  Every toolchain installed through an npm global prefix or inside the dependency root gets a
+  two-tap **删除 / Delete**; OS-provided binaries are marked **系统自带 / System** instead, because
+  removing them would break the running Harness.
 - **最近一次操作** — the exact command, exit code, duration and truncated output.
 
 ## Install
@@ -54,7 +57,8 @@ The plugin needs no build step, no dependencies, and no configuration.
 
 `npm-install`, `npm-uninstall`, `npm-cache-clean`, `pip-install`, `pip-uninstall`,
 `pip-cache-purge`, `venv-create`, `venv-remove`, `go-clean`, `ccache-clear`, `tmp-clean`,
-`dir-clean` (only `cache`, `downloads`, `build`, `tmp` — emptied and recreated, never removed).
+`dir-clean` (only `cache`, `downloads`, `build`, `tmp` — emptied and recreated), `tool-remove`
+(the npm-global or dependency-root toolchain identified by `id`).
 
 Safety properties:
 
